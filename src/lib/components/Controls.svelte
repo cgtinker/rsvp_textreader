@@ -51,32 +51,39 @@
 
   <div class="bar">
 
-    <!-- 5s back -->
-    <button class="btn" on:click={() => reader.jumpBack()} title="5 seconds back">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <polyline points="1 4 1 10 7 10"/>
-        <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
-        <text x="12" y="14" text-anchor="middle" font-size="7" stroke="none" fill="currentColor" font-family="monospace">5</text>
-      </svg>
-    </button>
-
-    <!-- play / pause -->
-    <button class="btn btn-play" on:click={() => reader.toggle()}>
-      {#if $reader.playing}
-        <!-- pause icon -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <rect x="5" y="4" width="4" height="16" rx="1"/>
-          <rect x="15" y="4" width="4" height="16" rx="1"/>
+    <!-- play group: absolutely centered on the vertical guide -->
+    <div class="play-group">
+      <button class="btn" on:click={() => reader.jumpBack()} title="5 seconds back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polyline points="1 4 1 10 7 10"/>
+          <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+          <text x="12" y="14" text-anchor="middle" font-size="7" stroke="none" fill="currentColor" font-family="monospace">5</text>
         </svg>
-      {:else}
-        <!-- play icon -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <polygon points="5,3 19,12 5,21"/>
-        </svg>
-      {/if}
-    </button>
+      </button>
 
-    <!-- wpm slider -->
+      <button class="btn btn-play" on:click={() => reader.toggle()}>
+        {#if $reader.playing}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="5" y="4" width="4" height="16" rx="1"/>
+            <rect x="15" y="4" width="4" height="16" rx="1"/>
+          </svg>
+        {:else}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5,3 19,12 5,21"/>
+          </svg>
+        {/if}
+      </button>
+
+      <button class="btn" on:click={() => reader.jumpForward()} title="5 seconds forward">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-.49-4.5"/>
+          <text x="12" y="14" text-anchor="middle" font-size="7" stroke="none" fill="currentColor" font-family="monospace">5</text>
+        </svg>
+      </button>
+    </div>
+
+    <!-- wpm: pinned to right -->
     <div class="wpm-row">
       <input
         type="range"
@@ -87,7 +94,7 @@
         on:input={handleWpm}
         class="slider"
       />
-      <span class="wpm-label">{wpm} <span class="wpm-unit">wpm</span></span>
+      <span class="wpm-label"><strong>{wpm}</strong> <span class="wpm-unit">wpm</span></span>
     </div>
 
   </div>
@@ -131,11 +138,30 @@
 
   /* button row */
   .bar {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 1.5rem;
-    padding: 0 2rem;
+    height: 2.5rem;
+    padding: 0 1.25rem;
+  }
+
+  /* back · play · forward — centered on the vertical guide column */
+  .play-group {
+    position: absolute;
+    left: var(--pivot-x);
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  /* wpm — pinned to right edge, matching gear icon */
+  .wpm-row {
+    position: absolute;
+    right: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
 
   .btn {

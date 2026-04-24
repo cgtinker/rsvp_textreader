@@ -73,6 +73,13 @@ function createReader() {
     });
   }
 
+  function jumpForward() {
+    update((s) => {
+      const steps = Math.floor((s.wpm / 60) * 5);
+      return { ...s, index: Math.min(s.words.length - 1, s.index + steps) };
+    });
+  }
+
   function loadText(text: string) {
     stop();
     const words = text
@@ -83,10 +90,10 @@ function createReader() {
   }
 
   function scrubTo(ratio: number) {
-    // update((s) => {
-    //   const index = Math.floor(ratio * (s.words.length - 1));
-    //   return { ...s, index: Math.max(0, Math.min(index, s.words.length - 1)) };
-    // });
+    update((s) => {
+      const index = Math.floor(ratio * (s.words.length - 1));
+      return { ...s, index: Math.max(0, Math.min(index, s.words.length - 1)) };
+    });
   }
 
   return {
@@ -96,6 +103,7 @@ function createReader() {
     toggle,
     setWpm,
     jumpBack,
+    jumpForward,
     loadText,
     scrubTo,
   };

@@ -6,6 +6,7 @@
   --accent: #c0392b;
   --guide:  rgba(0, 0, 0, 0.08);
   --muted:  rgba(0, 0, 0, 0.25);
+  --pivot-x: 37.3%;
 }
 
 :root[data-theme="dark"] {
