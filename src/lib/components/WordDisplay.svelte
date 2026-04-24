@@ -5,12 +5,23 @@
 
   let charWidth = 0
   let charRef: HTMLSpanElement
+  let stageEl: HTMLDivElement
+  let wordRowEl: HTMLDivElement
 
   // measure a single character once the font is loaded
   onMount(() => {
-    document.fonts.ready.then(() => {
+    function measure() {
       charWidth = charRef.getBoundingClientRect().width
-    })
+      if (stageEl && wordRowEl) {
+        const sr = stageEl.getBoundingClientRect()
+        const wr = wordRowEl.getBoundingClientRect()
+        const pct = ((wr.bottom - sr.top) / sr.height * 100).toFixed(2)
+        stageEl.style.setProperty('--text-bottom', `${pct}%`)
+      }
+    }
+    document.fonts.ready.then(measure)
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
   })
 
   $: pivot  = getPivotIndex($currentWord)
@@ -32,14 +43,15 @@
   aria-hidden="true"
 >M</span>
 
-<div class="stage">
+<div class="stage" bind:this={stageEl}>
   <div class="guide guide-h"/>
   <div class="guide guide-v"/>
   <div class="pip pip-top"/>
   <div class="pip pip-bot"/>
-
+  
   <div
     class="word-row"
+    bind:this={wordRowEl}
     style="transform: translateX({offset}px)"
     aria-live="assertive"
     aria-atomic="true"
@@ -60,6 +72,7 @@
     justify-content: center;
     background: var(--bg);
     overflow: hidden;
+    --pivot-x: 37.3%;
   }
 
   .guide {
@@ -67,23 +80,24 @@
     pointer-events: none;
   }
   .guide-h {
-    top: 50%;
+    top: var(--text-bottom);
     left: 0;
     right: 0;
     height: 1px;
     background: var(--guide);
   }
-  .guide-v {
-    left: 50%;
-    top: 10%;
-    bottom: 10%;
-    width: 1px;
-    background: var(--guide);
-  }
 
+  .guide-v {
+    left: var(--pivot-x);
+    top: 0%;
+    bottom: var(--controls-height, 5rem);
+    width: 30px;
+    background: var(--guide);
+    transform: translateX(-50%);}
+/*
   .pip {
     position: absolute;
-    left: 50%;
+    left: var(--pivot-x);
     transform: translateX(-50%);
     width: 5px;
     height: 5px;
@@ -93,12 +107,12 @@
   }
   .pip-top { top: calc(50% - 2.6em); }
   .pip-bot { bottom: calc(50% - 2.6em); }
-
+*/
   .word-row {
     position: absolute;
     display: flex;
     align-items: baseline;
-    left: 50%;
+    left: var(--pivot-x);
     /* offset applied via inline style above */
   }
 

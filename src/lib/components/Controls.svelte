@@ -1,8 +1,31 @@
 <script lang="ts">
   import { reader, currentIndex, wordCount } from '$lib/stores/reader'
+  import { settings } from '$lib/stores/settings'
+  import { onMount } from 'svelte'
 
-  // local bound value for the slider so it feels instant
-  let wpm = 300
+  let controlsEl: HTMLDivElement
+
+  onMount(() => {
+    function measureControls() {
+      if (controlsEl) {
+        const h = controlsEl.getBoundingClientRect().height
+        document.documentElement.style.setProperty('--controls-height', `${h}px`)
+      }
+    }
+    measureControls()
+    window.addEventListener('resize', measureControls)
+    return () => window.removeEventListener('resize', measureControls)
+  })
+
+  // initialize from settings default
+  let wpm = $settings.defaultWpm
+  reader.setWpm(wpm)
+
+  // keep in sync if settings default changes while not playing
+  $: if (!$reader.playing) {
+    wpm = $settings.defaultWpm
+    reader.setWpm(wpm)
+  }
 
   function handleWpm(e: Event) {
     wpm = Number((e.target as HTMLInputElement).value)
@@ -18,7 +41,7 @@
   $: progressPct = $wordCount === 0 ? 0 : ($currentIndex / ($wordCount - 1)) * 100
 </script>
 
-<div class="controls">
+<div class="controls" bind:this={controlsEl}>
 
   <!-- progress / scrub bar -->
   <div class="progress-track" on:click={handleScrub} role="progressbar"
