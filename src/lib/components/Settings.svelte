@@ -109,7 +109,7 @@
   .corner-btn {
     position: fixed;
     top: 1.25rem;
-    left: 1.25rem;
+    right: 1.25rem;
     background: none;
     border: none;
     cursor: pointer;

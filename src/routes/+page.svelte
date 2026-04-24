@@ -45,7 +45,7 @@
   .gear-btn {
     position: fixed;
     top: 1.25rem;
-    left: 1.25rem;
+    right: 1.25rem;
     z-index: 10;
     background: none;
     border: none;
