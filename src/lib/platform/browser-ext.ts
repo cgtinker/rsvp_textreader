@@ -14,22 +14,28 @@ declare const browser: {
   }
   storage: {
     local: {
-      get(key: string): Promise<Record<string, unknown>>
+      get(key: string | string[]): Promise<Record<string, unknown>>
       set(items: Record<string, unknown>): Promise<void>
+      remove(key: string | string[]): Promise<void>
     }
+  }
+  windows: {
+    create(createData: Record<string, unknown>): Promise<unknown>
+  }
+  runtime: {
+    getURL(path: string): string
   }
 }
 
 export const browserExtPlatform: Platform = {
   async getSelectedText(): Promise<string> {
     try {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
-      if (tab?.id == null) return ''
-      const [result] = await browser.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => window.getSelection()?.toString() ?? '',
-      })
-      return result?.result ?? ''
+      const stored = await browser.storage.local.get('pendingText')
+      if (stored.pendingText) {
+        await browser.storage.local.remove('pendingText')
+        return stored.pendingText as string
+      }
+      return ''
     } catch {
       return ''
     }

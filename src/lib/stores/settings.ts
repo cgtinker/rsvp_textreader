@@ -1,6 +1,9 @@
 import { writable } from "svelte/store";
 import { platform } from "$lib/platform";
 
+let _resolveSettingsLoaded!: () => void;
+export const settingsLoaded: Promise<void> = new Promise((r) => { _resolveSettingsLoaded = r; });
+
 export type SettingsState = {
   defaultWpm: number;
   darkMode: boolean;
@@ -55,6 +58,7 @@ function createSettings() {
       update((s) => ({ ...s, ...saved }));
     }
     _loaded = true;
+    _resolveSettingsLoaded();
   });
 
   function setDefaultWpm(wpm: number) {

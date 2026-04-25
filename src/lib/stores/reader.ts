@@ -115,7 +115,7 @@ function createReader() {
       opts = { aggressiveness: s.adaptiveAggressiveness, punctuationPauses: s.punctuationPauses, wordLengthScaling: s.wordLengthScaling };
     })();
     const words = tokenize(text, opts);
-    set({ ...initial, words, rawText: text });
+    update((s) => ({ ...initial, wpm: s.wpm, words, rawText: text }));
   }
 
   function retokenize(opts: TokenizeOptions) {

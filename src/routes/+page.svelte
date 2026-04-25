@@ -3,13 +3,17 @@
   import Controls from "$lib/components/Controls.svelte";
   import Settings from "$lib/components/Settings.svelte";
   import { reader } from "$lib/stores/reader";
+  import { settings, settingsLoaded } from "$lib/stores/settings";
   import { platform } from "$lib/platform";
+  import { get } from "svelte/store";
   import { onMount } from "svelte";
   import "../app.css";
 
   let settingsOpen = false;
 
   onMount(async () => {
+    await settingsLoaded;
+    reader.setWpm(get(settings).defaultWpm);
     const text = await platform.getSelectedText();
     reader.loadText(text.trim());
   });
