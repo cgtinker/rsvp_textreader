@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "TextPlayer",
+  "version": "0.1.0",
+  "description": "Speed reader — select text on any page and read it at your own pace.",
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "TextPlayer",
+    "default_width": 600,
+    "default_height": 400
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "textplayer@local",
+      "strict_min_version": "109.0"
+    }
+  }
+}

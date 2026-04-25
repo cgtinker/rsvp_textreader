@@ -1,4 +1,5 @@
 import { writable } from "svelte/store";
+import { platform } from "$lib/platform";
 
 export type SettingsState = {
   defaultWpm: number;
@@ -32,7 +33,10 @@ const initial: SettingsState = {
 function createSettings() {
   const { subscribe, update, set } = writable<SettingsState>(initial);
 
-  // Apply theme + accent to <html> whenever store changes
+  // Guard: only persist after initial async hydration completes.
+  let _loaded = false;
+
+  // Apply theme + accent to <html> and persist whenever store changes.
   subscribe((s) => {
     if (typeof document === "undefined") return;
     document.documentElement.setAttribute(
@@ -40,10 +44,17 @@ function createSettings() {
       s.darkMode ? "dark" : "light"
     );
     document.documentElement.style.setProperty("--accent", s.accentColor);
+    if (_loaded) {
+      platform.saveSettings(s);
+    }
+  });
 
-    // dark accent is slightly lighter than light accent for the same hue
-    // but we use the same value — the dark theme definition is overridden
-    // by the inline style here, which is fine since we want per-color theming
+  // Hydrate from persistent storage, then enable saving.
+  platform.loadSettings().then((saved) => {
+    if (Object.keys(saved).length > 0) {
+      update((s) => ({ ...s, ...saved }));
+    }
+    _loaded = true;
   });
 
   function setDefaultWpm(wpm: number) {

@@ -3,24 +3,16 @@
   import Controls from "$lib/components/Controls.svelte";
   import Settings from "$lib/components/Settings.svelte";
   import { reader } from "$lib/stores/reader";
+  import { platform } from "$lib/platform";
+  import { onMount } from "svelte";
   import "../app.css";
 
   let settingsOpen = false;
 
-  reader.loadText(`
-    The quick brown fox jumps over the lazy dog near the riverbank
-    while beautiful swallows glide effortlessly through extraordinary circumstances
-    and mysterious strangers contemplated their complicated philosophical predicaments
-  The quick brown fox jumps over the lazy dog near the riverbank
-    while beautiful swallows glide effortlessly through extraordinary circumstances
-    and mysterious strangers contemplated their complicated philosophical predicaments
-  The quick brown fox jumps over the lazy dog near the riverbank
-    while beautiful swallows glide effortlessly through extraordinary circumstances
-    and mysterious strangers contemplated their complicated philosophical predicaments
-  The quick brown fox jumps over the lazy dog near the riverbank
-    while beautiful swallows glide effortlessly through extraordinary circumstances
-    and mysterious strangers contemplated their complicated philosophical predicaments
-  `);
+  onMount(async () => {
+    const text = await platform.getSelectedText();
+    reader.loadText(text.trim());
+  });
 </script>
 
 {#if settingsOpen}

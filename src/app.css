@@ -24,6 +24,8 @@
 }
 
 html, body {
-  height: 100%;
+  width: 600px;
+  height: 400px;
   background: var(--bg);
+  overflow: hidden;
 }

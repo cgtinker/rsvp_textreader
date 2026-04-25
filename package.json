@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "build:ext:firefox": "vite build && node scripts/ext-postbuild.mjs firefox",
+    "build:ext:safari": "vite build && node scripts/ext-postbuild.mjs safari && xcrun safari-web-extension-converter build/ --project-location safari-ext/ --bundle-identifier com.admin.textplayer --app-name TextPlayer --no-open"
   },
   "license": "MIT",
   "dependencies": {

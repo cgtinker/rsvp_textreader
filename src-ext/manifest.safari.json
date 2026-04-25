@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "TextPlayer",
+  "version": "0.1.0",
+  "description": "Speed reader — select text on any page and read it at your own pace.",
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "TextPlayer"
+  },
+  "permissions": ["activeTab", "scripting", "storage"]
+}
