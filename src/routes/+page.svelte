@@ -11,11 +11,31 @@
 
   let settingsOpen = false;
 
+  const PLACEHOLDER = "Paste text or drop a .txt file to start reading.";
+
+  async function loadFile(file: File) {
+    if (!file.name.endsWith('.txt') && !file.type.startsWith('text/')) return;
+    const text = (await file.text()).trim();
+    if (text) { reader.stop(); reader.loadText(text); }
+  }
+
   onMount(async () => {
     await settingsLoaded;
     reader.setWpm(get(settings).defaultWpm);
     const text = await platform.getSelectedText();
-    reader.loadText(text.trim());
+    reader.loadText(text.trim() || PLACEHOLDER);
+
+    document.addEventListener('paste', (e: ClipboardEvent) => {
+      const text = e.clipboardData?.getData('text/plain').trim() ?? '';
+      if (text) { reader.stop(); reader.loadText(text); }
+    });
+
+    document.addEventListener('dragover', (e: DragEvent) => e.preventDefault());
+    document.addEventListener('drop', async (e: DragEvent) => {
+      e.preventDefault();
+      const file = e.dataTransfer?.files[0];
+      if (file) await loadFile(file);
+    });
   });
 </script>
 
