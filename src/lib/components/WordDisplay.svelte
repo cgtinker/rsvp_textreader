@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { currentWord } from "$lib/stores/reader";
+  import { currentWord, reader } from "$lib/stores/reader";
   import { getPivotIndex } from "$lib/utils/orp";
   import { onMount } from "svelte";
 
@@ -71,18 +71,27 @@
   // shift the word left by the width of the `before` chars
   // plus half a char so the pivot char's center sits at x=0
   $: offset = charWidth > 0 ? -(before.length * charWidth) - charWidth / 2 : 0;
+
+  function handleWheel(e: WheelEvent) {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 10 : -10;
+    const next = Math.min(1000, Math.max(60, $reader.wpm + delta));
+    reader.setWpm(next);
+  }
 </script>
 
 <!-- hidden single char used purely for measurement -->
 <span bind:this={charRef} class="seg measure" aria-hidden="true">M</span>
 
-<div class="stage" bind:this={stageEl}>
+<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+<div class="stage" bind:this={stageEl} on:click={() => reader.toggle()} on:wheel|preventDefault={handleWheel}>
   <div class="guide guide-cap"></div>
   <div class="guide guide-xh"></div>
   <div class="guide guide-h"></div>
   <div class="guide guide-desc"></div>
   <div class="guide guide-v"></div>
 
+  <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
   <div
     class="word-row"
     bind:this={wordRowEl}
@@ -116,6 +125,7 @@
     background: var(--bg);
     overflow: hidden;
     --pivot-x: 37.3%;
+    cursor: pointer;
   }
 
   .guide {

@@ -17,19 +17,8 @@
     return () => window.removeEventListener('resize', measureControls)
   })
 
-  // initialize from settings default
-  let wpm = $settings.defaultWpm
-  reader.setWpm(wpm)
-
-  // keep in sync if settings default changes while not playing
-  $: if (!$reader.playing) {
-    wpm = $settings.defaultWpm
-    reader.setWpm(wpm)
-  }
-
   function handleWpm(e: Event) {
-    wpm = Number((e.target as HTMLInputElement).value)
-    reader.setWpm(wpm)
+    reader.setWpm(Number((e.target as HTMLInputElement).value))
   }
 
   function handleScrub(e: MouseEvent) {
@@ -90,11 +79,11 @@
         min="60"
         max="1000"
         step="10"
-        value={wpm}
+        value={$reader.wpm}
         on:input={handleWpm}
         class="slider"
       />
-      <span class="wpm-label"><strong>{wpm}</strong> <span class="wpm-unit">wpm</span></span>
+      <span class="wpm-label"><strong>{$reader.wpm}</strong> <span class="wpm-unit">wpm</span></span>
     </div>
 
   </div>
