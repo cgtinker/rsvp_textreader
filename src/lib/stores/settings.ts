@@ -12,12 +12,12 @@ export type SettingsState = {
 };
 
 const ACCENT_COLORS = [
-  "#c0392b",
-  "#e67e22",
-  "#27ae60",
   "#2980b9",
   "#8e44ad",
   "#e91e8c",
+  "#c0392b",
+  "#e67e22",
+  "#27ae60",
 ];
 
 const initial: SettingsState = {
