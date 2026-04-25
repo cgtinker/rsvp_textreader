@@ -98,12 +98,6 @@
     display: flex;
     flex-direction: column;
     padding: 0 0 1.5rem;
-    opacity: 0.25;
-    transition: opacity 200ms ease;
-  }
-
-  .controls:hover {
-    opacity: 1;
   }
 
   /* progress bar */
