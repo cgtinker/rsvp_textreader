@@ -5,6 +5,9 @@ export type SettingsState = {
   darkMode: boolean;
   accentColor: string;
   adaptiveMode: boolean;
+  punctuationPauses: boolean;
+  wordLengthScaling: boolean;
+  adaptiveAggressiveness: number;
 };
 
 const ACCENT_COLORS = [
@@ -20,7 +23,10 @@ const initial: SettingsState = {
   defaultWpm: 300,
   darkMode: false,
   accentColor: ACCENT_COLORS[0],
-  adaptiveMode: false,
+  adaptiveMode: true,
+  punctuationPauses: true,
+  wordLengthScaling: true,
+  adaptiveAggressiveness: 0.5,
 };
 
 function createSettings() {
@@ -56,6 +62,18 @@ function createSettings() {
     update((s) => ({ ...s, adaptiveMode: !s.adaptiveMode }));
   }
 
+  function togglePunctuationPauses() {
+    update((s) => ({ ...s, punctuationPauses: !s.punctuationPauses }));
+  }
+
+  function toggleWordLengthScaling() {
+    update((s) => ({ ...s, wordLengthScaling: !s.wordLengthScaling }));
+  }
+
+  function setAdaptiveAggressiveness(value: number) {
+    update((s) => ({ ...s, adaptiveAggressiveness: Math.min(Math.max(value, 0), 1) }));
+  }
+
   return {
     subscribe,
     set,
@@ -63,6 +81,9 @@ function createSettings() {
     toggleDarkMode,
     setAccentColor,
     toggleAdaptiveMode,
+    togglePunctuationPauses,
+    toggleWordLengthScaling,
+    setAdaptiveAggressiveness,
     ACCENT_COLORS,
   };
 }

@@ -9,6 +9,19 @@
     wpm = Number((e.target as HTMLInputElement).value)
     settings.setDefaultWpm(wpm)
   }
+
+  let adaptiveExpanded = $settings.adaptiveMode
+  let scalingExpanded = $settings.wordLengthScaling
+
+  function toggleAdaptive() {
+    settings.toggleAdaptiveMode()
+    if ($settings.adaptiveMode) adaptiveExpanded = true
+  }
+
+  function toggleScaling() {
+    settings.toggleWordLengthScaling()
+    if ($settings.wordLengthScaling) scalingExpanded = true
+  }
 </script>
 
 <div class="overlay" role="dialog" aria-modal="true" aria-label="Settings">
@@ -80,11 +93,16 @@
 
     <!-- Adaptive mode -->
     <section class="row">
-      <span class="label">Adaptive mode</span>
+      <button class="label with-chevron label-btn" on:click={() => { if ($settings.adaptiveMode) adaptiveExpanded = !adaptiveExpanded }}>
+        <svg class="chevron" class:open={$settings.adaptiveMode && adaptiveExpanded} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        Adaptive mode
+      </button>
       <button
         class="toggle"
         class:on={$settings.adaptiveMode}
-        on:click={() => settings.toggleAdaptiveMode()}
+        on:click={toggleAdaptive}
         role="switch"
         aria-checked={$settings.adaptiveMode}
         aria-label="Toggle adaptive mode"
@@ -92,6 +110,68 @@
         <span class="thumb"></span>
       </button>
     </section>
+
+    {#if $settings.adaptiveMode && adaptiveExpanded}
+      <div class="divider"></div>
+
+      <!-- Punctuation pauses -->
+      <section class="row">
+        <span class="label">Punctuation pauses</span>
+        <button
+          class="toggle"
+          class:on={$settings.punctuationPauses}
+          on:click={() => settings.togglePunctuationPauses()}
+          role="switch"
+          aria-checked={$settings.punctuationPauses}
+          aria-label="Toggle punctuation pauses"
+        >
+          <span class="thumb"></span>
+        </button>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- Word length scaling -->
+      <section class="row">
+        <button class="label with-chevron label-btn" on:click={() => { if ($settings.wordLengthScaling) scalingExpanded = !scalingExpanded }}>
+          <svg class="chevron" class:open={$settings.wordLengthScaling && scalingExpanded} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          Word length scaling
+        </button>
+        <button
+          class="toggle"
+          class:on={$settings.wordLengthScaling}
+          on:click={toggleScaling}
+          role="switch"
+          aria-checked={$settings.wordLengthScaling}
+          aria-label="Toggle word length scaling"
+        >
+          <span class="thumb"></span>
+        </button>
+      </section>
+
+      {#if $settings.wordLengthScaling && scalingExpanded}
+        <div class="divider"></div>
+
+        <section class="row">
+          <label class="label" for="aggressiveness">Scaling aggressiveness</label>
+          <div class="wpm-row">
+            <input
+              id="aggressiveness"
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={$settings.adaptiveAggressiveness}
+              on:input={(e) => settings.setAdaptiveAggressiveness(Number(e.currentTarget.value))}
+              class="slider"
+            />
+            <span class="wpm-val">{($settings.adaptiveAggressiveness * 100).toFixed(0)}%</span>
+          </div>
+        </section>
+      {/if}
+    {/if}
   </div>
 </div>
 
@@ -158,6 +238,33 @@
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;
     color: var(--word);
+  }
+
+  .label.with-chevron {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .label-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--word);
+    text-align: left;
+  }
+
+  .chevron {
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: transform 200ms ease;
+    transform: rotate(0deg);
+  }
+  .chevron.open {
+    transform: rotate(90deg);
   }
 
   /* WPM slider */
