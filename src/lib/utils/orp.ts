@@ -1,3 +1,5 @@
+import type { Script } from "$lib/utils/language";
+
 export type WordEntry = {
   word: string;
   multiplier: number;
@@ -10,11 +12,21 @@ export function getPivotIndex(word: string): number {
   );
 }
 
+function isSentenceEnd(ch: string): boolean {
+  return ch === "." || ch === "!" || ch === "?" || ch === "。" || ch === "！" || ch === "？";
+}
+
 function getPunctuationMultiplier(word: string): number {
-  if (word.endsWith("...")) return 2.5;
+  // CJK ellipsis variants
+  if (word.endsWith("……") || word.endsWith("...")) return 2.5;
   const last = word.at(-1);
-  if (last === "." || last === "!" || last === "?") return 2.0;
-  if (last === ";" || last === ":") return 1.75;
+  // CJK full-stop, exclamation, question
+  if (last === "。" || last === "！" || last === "？" || last === "." || last === "!" || last === "?") return 2.0;
+  // CJK ideographic comma / enumeration comma / western semicolon/colon
+  if (last === "、" || last === "，" || last === ";" || last === ":") return 1.5;
+  // CJK closing quotes / brackets
+  if (last === "」" || last === "』" || last === "）" || last === "》" || last === "】") return 1.3;
+  if (last === "；" || last === "：") return 1.75;
   if (last === ",") return 1.5;
   if (last === "-" || last === "–") return 1.3;
   return 1.0;
@@ -22,7 +34,7 @@ function getPunctuationMultiplier(word: string): number {
 
 function getLengthMultiplier(word: string, aggressiveness: number): number {
   // strip leading/trailing non-alpha to measure the "true" word length
-  const clean = word.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, "");
+  const clean = word.replace(/^[^a-zA-Z0-9\u3040-\u9fff]+|[^a-zA-Z0-9\u3040-\u9fff]+$/g, "");
   const len = clean.length || word.length;
   const m = 1 + (len - 5) * 0.04 * aggressiveness;
   return Math.min(Math.max(m, 0.75), 1.75);
@@ -32,14 +44,123 @@ export type TokenizeOptions = {
   aggressiveness?: number;
   punctuationPauses?: boolean;
   wordLengthScaling?: boolean;
+  language?: Script;
 };
+
+// ---------------------------------------------------------------------------
+// CJK tokenisation via Intl.Segmenter
+// ---------------------------------------------------------------------------
+
+function tokenizeCJK(text: string, options: TokenizeOptions): WordEntry[] {
+  const {
+    aggressiveness = 0.5,
+    punctuationPauses = true,
+    wordLengthScaling = true,
+    language = "chinese",
+  } = options;
+
+  const locale = language === "japanese" ? "ja" : "zh";
+  // Japanese: word granularity groups kanji+kana into real words.
+  // Chinese:  word granularity may also produce small meaningful groups;
+  //           fall back to grapheme if Intl.Segmenter is unavailable.
+  const granularity = language === "japanese" ? "word" : "word";
+
+  const entries: WordEntry[] = [];
+  const paragraphs = text.split(/\n{2,}/);
+
+  for (let pi = 0; pi < paragraphs.length; pi++) {
+    const para = paragraphs[pi].trim();
+    if (!para) continue;
+
+    // Collect word-like segments using Intl.Segmenter.
+    // isWordLike=true skips pure whitespace/punctuation segments so that
+    // punctuation is left attached to the preceding token (we handle it below).
+    let segments: string[];
+
+    if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+      const segmenter = new Intl.Segmenter(locale, { granularity });
+      const allSegs = [...segmenter.segment(para)];
+
+      if (language === "japanese") {
+        // For Japanese keep only isWordLike segments (skips spaces/punctuation).
+        // Punctuation that directly follows a word should be merged so that
+        // getPunctuationMultiplier can detect it.
+        segments = [];
+        for (let i = 0; i < allSegs.length; i++) {
+          const seg = allSegs[i];
+          if (seg.isWordLike) {
+            let token = seg.segment;
+            // Peek ahead: if the very next segment is punctuation, attach it.
+            const next = allSegs[i + 1];
+            if (next && !next.isWordLike && next.segment.trim().length > 0) {
+              token += next.segment;
+              i++; // skip the punctuation segment
+            }
+            segments.push(token);
+          }
+        }
+      } else {
+        // Chinese: use every non-whitespace segment (word-like or punctuation).
+        // Punctuation gets its own entry which will receive a high multiplier,
+        // but we skip stand-alone whitespace.
+        segments = allSegs
+          .map((s) => s.segment)
+          .filter((s) => s.trim().length > 0);
+      }
+    } else {
+      // Fallback: one grapheme cluster per token (safe for CJK).
+      segments = [...para].filter((ch) => ch.trim().length > 0);
+    }
+
+    let sentenceStart = true;
+
+    for (let ti = 0; ti < segments.length; ti++) {
+      const word = segments[ti];
+      const isLastInParagraph = ti === segments.length - 1 && pi < paragraphs.length - 1;
+
+      const punc = punctuationPauses ? getPunctuationMultiplier(word) : 1.0;
+      // Length scaling for CJK: single chars are the norm (len=1), so the
+      // base multiplier is lower — use aggressiveness at 50% weight.
+      const len = wordLengthScaling ? getLengthMultiplier(word, aggressiveness * 0.5) : 1.0;
+
+      let bonus = 1.0;
+      if (sentenceStart) bonus += 0.15; // smaller bonus for CJK (no ALL-CAPS concept)
+
+      let multiplier: number;
+      if (isLastInParagraph) {
+        multiplier = 3.0;
+      } else {
+        multiplier = Math.min(punc * len * bonus, 2.5);
+      }
+
+      entries.push({ word, multiplier });
+
+      const last = word.at(-1) ?? "";
+      sentenceStart = isSentenceEnd(last);
+    }
+
+    sentenceStart = true; // reset for next paragraph (unused but kept for clarity)
+  }
+
+  return entries;
+}
+
+// ---------------------------------------------------------------------------
+// Latin tokenisation (original logic)
+// ---------------------------------------------------------------------------
 
 export function tokenize(text: string, options: TokenizeOptions = {}): WordEntry[] {
   const {
     aggressiveness = 0.5,
     punctuationPauses = true,
     wordLengthScaling = true,
+    language = "latin",
   } = options;
+
+  if (language === "japanese" || language === "chinese") {
+    return tokenizeCJK(text, options);
+  }
+
   // split into paragraphs first to detect paragraph breaks
   const paragraphs = text.split(/\n{2,}/);
   const entries: WordEntry[] = [];
@@ -77,7 +198,7 @@ export function tokenize(text: string, options: TokenizeOptions = {}): WordEntry
 
       // next word is a sentence start if this word ends a sentence
       const last = word.at(-1);
-      sentenceStart = last === "." || last === "!" || last === "?";
+      sentenceStart = isSentenceEnd(last ?? "");
     }
 
     // paragraph boundary resets sentence tracking

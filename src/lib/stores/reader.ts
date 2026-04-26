@@ -1,5 +1,6 @@
 import { writable, derived } from "svelte/store";
 import { tokenize, type WordEntry, type TokenizeOptions } from "$lib/utils/orp";
+import { detectScript, type Script } from "$lib/utils/language";
 import { settings } from "$lib/stores/settings";
 
 export type ReaderState = {
@@ -8,6 +9,7 @@ export type ReaderState = {
   index: number;
   wpm: number;
   playing: boolean;
+  language: Script;
 };
 
 const initial: ReaderState = {
@@ -16,6 +18,7 @@ const initial: ReaderState = {
   index: 0,
   wpm: 300,
   playing: false,
+  language: "latin",
 };
 
 function createReader() {
@@ -24,13 +27,15 @@ function createReader() {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
   let adaptiveMode = false;
-  let tokenizeOptions: TokenizeOptions = { aggressiveness: 0.5, punctuationPauses: true, wordLengthScaling: true };
+  let detectedLanguage: Script = "latin";
+  let tokenizeOptions: TokenizeOptions = { aggressiveness: 0.5, punctuationPauses: true, wordLengthScaling: true, language: "latin" };
   settings.subscribe((s) => {
     adaptiveMode = s.adaptiveMode;
     const next: TokenizeOptions = {
       aggressiveness: s.adaptiveAggressiveness,
       punctuationPauses: s.punctuationPauses,
       wordLengthScaling: s.wordLengthScaling,
+      language: detectedLanguage,
     };
     if (
       next.aggressiveness !== tokenizeOptions.aggressiveness ||
@@ -110,18 +115,19 @@ function createReader() {
 
   function loadText(text: string) {
     stop();
-    let opts: TokenizeOptions = { aggressiveness: 0.5, punctuationPauses: true, wordLengthScaling: true };
+    detectedLanguage = detectScript(text);
+    let opts: TokenizeOptions = { aggressiveness: 0.5, punctuationPauses: true, wordLengthScaling: true, language: detectedLanguage };
     settings.subscribe((s) => {
-      opts = { aggressiveness: s.adaptiveAggressiveness, punctuationPauses: s.punctuationPauses, wordLengthScaling: s.wordLengthScaling };
+      opts = { aggressiveness: s.adaptiveAggressiveness, punctuationPauses: s.punctuationPauses, wordLengthScaling: s.wordLengthScaling, language: detectedLanguage };
     })();
     const words = tokenize(text, opts);
-    update((s) => ({ ...initial, wpm: s.wpm, words, rawText: text }));
+    update((s) => ({ ...initial, wpm: s.wpm, words, rawText: text, language: detectedLanguage }));
   }
 
   function retokenize(opts: TokenizeOptions) {
     update((s) => {
       if (!s.rawText) return s;
-      return { ...s, words: tokenize(s.rawText, opts) };
+      return { ...s, words: tokenize(s.rawText, { ...opts, language: detectedLanguage }) };
     });
   }
 

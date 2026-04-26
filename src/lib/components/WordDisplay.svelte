@@ -1,26 +1,47 @@
 <script lang="ts">
   import { currentWord, reader } from "$lib/stores/reader";
   import { getPivotIndex } from "$lib/utils/orp";
+  import { isCJK } from "$lib/utils/language";
   import { measureTypography } from "$lib/utils/typography";
   import { onMount } from "svelte";
 
   let charWidth = 0;
-  let charRef: HTMLSpanElement;
+  let charRef: HTMLSpanElement;   // Latin reference: 'M'
+  let cjkRef: HTMLSpanElement;    // CJK reference: '字'
   let stageEl: HTMLDivElement;
   let wordRowEl: HTMLDivElement;
   let capRef: HTMLSpanElement;
 
+  $: isCJKMode = isCJK($reader.language);
+
   onMount(() => {
     function measure() {
-      charWidth = charRef.getBoundingClientRect().width;
+      // Pick reference width based on the detected script.
+      // CJK glyphs are typically full-width (≈2× a Latin em), so we
+      // measure from a real CJK character when in CJK mode.
+      charWidth = isCJKMode
+        ? cjkRef.getBoundingClientRect().width
+        : charRef.getBoundingClientRect().width;
+
       if (!stageEl || !capRef) return;
-      const vars = measureTypography(stageEl, capRef);
-      Object.entries(vars).forEach(([k, v]) => stageEl.style.setProperty(k, v));
+      // Typography guides use Latin metrics — skip in CJK mode to avoid
+      // guide lines being positioned for Latin ink bounds.
+      if (!isCJKMode) {
+        const vars = measureTypography(stageEl, capRef);
+        Object.entries(vars).forEach(([k, v]) => stageEl.style.setProperty(k, v));
+      }
     }
     document.fonts.ready.then(measure);
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   });
+
+  // Re-measure when language changes (reactive to reader.language).
+  $: if (isCJKMode !== undefined && charRef && cjkRef) {
+    charWidth = isCJKMode
+      ? cjkRef.getBoundingClientRect().width
+      : charRef.getBoundingClientRect().width;
+  }
 
   $: pivot = getPivotIndex($currentWord);
   $: before = $currentWord.slice(0, pivot);
@@ -39,8 +60,9 @@
   }
 </script>
 
-<!-- hidden single char used purely for measurement -->
+<!-- hidden single chars used purely for width measurement -->
 <span bind:this={charRef} class="seg measure" aria-hidden="true">M</span>
+<span bind:this={cjkRef} class="seg measure" aria-hidden="true">字</span>
 
 <div
   class="stage"

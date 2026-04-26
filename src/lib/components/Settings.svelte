@@ -1,5 +1,6 @@
 <script lang="ts">
   import { settings, ACCENT_COLORS } from '$lib/stores/settings'
+  import { reader } from '$lib/stores/reader'
   import Toggle from '$lib/components/ui/Toggle.svelte'
   import IconClose from '$lib/components/ui/icons/IconClose.svelte'
 
@@ -14,6 +15,12 @@
 
   let adaptiveExpanded = $settings.adaptiveMode
   let scalingExpanded = $settings.wordLengthScaling
+
+  const SCRIPT_LABELS: Record<string, string> = {
+    latin: 'Latin',
+    japanese: 'Japanese',
+    chinese: 'Chinese',
+  }
 
   function toggleAdaptive() {
     settings.toggleAdaptiveMode()
@@ -34,6 +41,15 @@
 
   <div class="panel">
     <h2 class="title">Settings</h2>
+
+    <!-- Detected script -->
+    {#if $reader.rawText}
+      <section class="row">
+        <span class="label">Detected script</span>
+        <span class="script-badge">{SCRIPT_LABELS[$reader.language] ?? $reader.language}</span>
+      </section>
+      <div class="divider"></div>
+    {/if}
 
     <!-- Default WPM -->
     <section class="row">
@@ -201,6 +217,14 @@
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;
     color: var(--word);
+  }
+
+  .script-badge {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
   }
 
   .label.with-chevron {
