@@ -3,6 +3,11 @@ import { tokenize, type WordEntry, type TokenizeOptions } from "$lib/utils/orp";
 import { detectScript, isCJK, type Script } from "$lib/utils/language";
 import { ensureJieba } from "$lib/utils/jieba";
 import { settings } from "$lib/stores/settings";
+import {
+  extractWordBrackets,
+  updateStack,
+  computeStackFromWords,
+} from "$lib/utils/brackets";
 
 export type ReaderState = {
   words: WordEntry[];
@@ -11,6 +16,7 @@ export type ReaderState = {
   wpm: number;
   playing: boolean;
   language: Script;
+  bracketStack: string[];
 };
 
 const initial: ReaderState = {
@@ -20,6 +26,7 @@ const initial: ReaderState = {
   wpm: 300,
   playing: false,
   language: "latin",
+  bracketStack: [],
 };
 
 function createReader() {
@@ -53,11 +60,14 @@ function createReader() {
   function tick() {
     update((s) => {
       if (!s.playing || s.index >= s.words.length - 1)
-        return { ...s, playing: false };
-      const next = { ...s, index: s.index + 1 };
-      const nextMultiplier = s.words[next.index]?.multiplier ?? 1.0;
-      scheduleNext(next.wpm, nextMultiplier);
-      return next;
+        return { ...s, playing: false, bracketStack: [] };
+      const nextIndex = s.index + 1;
+      const nextWord = s.words[nextIndex]?.word ?? "";
+      const { leading, trailing } = extractWordBrackets(nextWord);
+      const bracketStack = updateStack(s.bracketStack, leading, trailing);
+      const nextMultiplier = s.words[nextIndex]?.multiplier ?? 1.0;
+      scheduleNext(s.wpm, nextMultiplier);
+      return { ...s, index: nextIndex, bracketStack };
     });
   }
 
@@ -103,14 +113,18 @@ function createReader() {
   function jumpBack() {
     update((s) => {
       const steps = Math.floor((s.wpm / 60) * 5);
-      return { ...s, index: Math.max(0, s.index - steps) };
+      const index = Math.max(0, s.index - steps);
+      const bracketStack = computeStackFromWords(s.words, index);
+      return { ...s, index, bracketStack };
     });
   }
 
   function jumpForward() {
     update((s) => {
       const steps = Math.floor((s.wpm / 60) * 5);
-      return { ...s, index: Math.min(s.words.length - 1, s.index + steps) };
+      const index = Math.min(s.words.length - 1, s.index + steps);
+      const bracketStack = computeStackFromWords(s.words, index);
+      return { ...s, index, bracketStack };
     });
   }
 
@@ -133,14 +147,17 @@ function createReader() {
   function retokenize(opts: TokenizeOptions) {
     update((s) => {
       if (!s.rawText) return s;
-      return { ...s, words: tokenize(s.rawText, { ...opts, language: detectedLanguage }) };
+      const words = tokenize(s.rawText, { ...opts, language: detectedLanguage });
+      const bracketStack = computeStackFromWords(words, s.index);
+      return { ...s, words, bracketStack };
     });
   }
 
   function scrubTo(ratio: number) {
     update((s) => {
-      const index = Math.floor(ratio * (s.words.length - 1));
-      return { ...s, index: Math.max(0, Math.min(index, s.words.length - 1)) };
+      const index = Math.max(0, Math.min(Math.floor(ratio * (s.words.length - 1)), s.words.length - 1));
+      const bracketStack = computeStackFromWords(s.words, index);
+      return { ...s, index, bracketStack };
     });
   }
 

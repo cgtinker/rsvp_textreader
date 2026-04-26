@@ -4,6 +4,7 @@
   import { getPivotIndex } from "$lib/utils/orp";
   import { isCJK } from "$lib/utils/language";
   import { measureTypography } from "$lib/utils/typography";
+  import { getExpectedCloser } from "$lib/utils/brackets";
   import { onMount } from "svelte";
 
   let charWidth = 0;
@@ -47,6 +48,15 @@
   $: pivot = getPivotIndex($currentWord, $settings.focusPoint);
   $: pivotChar = $currentWord[pivot] ?? "";
 
+  // ---------------------------------------------------------------------------
+  // Bracket stack overlay — animated display state
+  // ---------------------------------------------------------------------------
+
+  // The expected next closing sign = the close for the topmost opening
+  $: expectedClosing = $reader.bracketStack.length > 0
+    ? getExpectedCloser($reader.bracketStack.at(-1)!)
+    : "";
+
   // Position of the vertical guide line as a % of stage width.
   // Mirror the same formula used in getPivotIndex so the guide always
   // sits under the focused character regardless of focusPoint setting.
@@ -82,6 +92,14 @@
 >
   <div class="guide-top"></div>
   <div class="guide-bottom"></div>
+  <div class="guide-descender"></div>
+  {#if $reader.bracketStack.length > 0}
+    <span class="bracket-stack" aria-hidden="true"
+    >{#each $reader.bracketStack as ch}{ch}{/each}</span>
+  {/if}
+  {#if expectedClosing}
+    <span class="bracket-expected" aria-hidden="true">{expectedClosing}</span>
+  {/if}
   <div
     class="word-row"
     bind:this={wordRowEl}
@@ -113,7 +131,8 @@
   }
 
   .guide-top,
-  .guide-bottom {
+  .guide-bottom,
+  .guide-descender {
     position: absolute;
     left: 0;
     right: 0;
@@ -125,9 +144,15 @@
   .guide-top {
     top: calc(50% + 2.5% - 0.55em);
   }
-  /* baseline/descender line: roughly 0.45em below the text box center */
+  /* baseline line: roughly 0.45em below the text box center */
   .guide-bottom {
     top: calc(50% + 2.5% + 0.45em);
+    top: var(--text-bottom, calc(50% + 2.5% + 0.45em));
+  }
+  /* descender line: where g/p/y touch */
+  .guide-descender {
+    top: calc(50% + 2.5% + 0.75em);
+    top: var(--text-descender, calc(50% + 2.5% + 0.75em));
   }
 
   .word-row {
@@ -172,5 +197,36 @@
     top: 0;
     color: var(--accent);
     pointer-events: none;
+  }
+
+  /* --- Bracket overlay --- */
+
+  .bracket-expected,
+  .bracket-stack {
+    position: absolute;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.55em;
+    line-height: 1;
+    white-space: pre;
+    pointer-events: none;
+    color: var(--word);
+    top: calc(50% + 2.5%);
+    transform: translateY(-50%);
+  }
+
+  /* Expected closing sign: right side of stage */
+  .bracket-expected {
+    right: 5%;
+    opacity: 0.4;
+  }
+
+  /* Stack of openings: left side of stage */
+  .bracket-stack {
+    left: 5%;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0;
+    opacity: 0.4;
   }
 </style>
