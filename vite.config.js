@@ -8,6 +8,12 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [sveltekit()],
 
+  // jieba-wasm loads its own WASM binary via wasm-bindgen; Vite's pre-bundler
+  // cannot process it and must be told to leave it alone.
+  optimizeDeps: {
+    exclude: ["jieba-wasm"],
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

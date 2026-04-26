@@ -1,6 +1,7 @@
 import { writable, derived } from "svelte/store";
 import { tokenize, type WordEntry, type TokenizeOptions } from "$lib/utils/orp";
-import { detectScript, type Script } from "$lib/utils/language";
+import { detectScript, isCJK, type Script } from "$lib/utils/language";
+import { ensureJieba } from "$lib/utils/jieba";
 import { settings } from "$lib/stores/settings";
 
 export type ReaderState = {
@@ -113,9 +114,14 @@ function createReader() {
     });
   }
 
-  function loadText(text: string) {
+  async function loadText(text: string) {
     stop();
     detectedLanguage = detectScript(text);
+    // jieba-wasm requires async initialisation before any cut() call.
+    // For non-Chinese scripts this resolves immediately (promise is never created).
+    if (detectedLanguage === "chinese") {
+      await ensureJieba();
+    }
     let opts: TokenizeOptions = { aggressiveness: 0.5, punctuationPauses: true, wordLengthScaling: true, language: detectedLanguage };
     settings.subscribe((s) => {
       opts = { aggressiveness: s.adaptiveAggressiveness, punctuationPauses: s.punctuationPauses, wordLengthScaling: s.wordLengthScaling, language: detectedLanguage };

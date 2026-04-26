@@ -1,4 +1,5 @@
 import type { Script } from "$lib/utils/language";
+import { cutChinese } from "$lib/utils/jieba";
 
 export type WordEntry = {
   word: string;
@@ -59,11 +60,6 @@ function tokenizeCJK(text: string, options: TokenizeOptions): WordEntry[] {
     language = "chinese",
   } = options;
 
-  const locale = language === "japanese" ? "ja" : "zh";
-  // Japanese: word granularity groups kanji+kana into real words.
-  // Chinese:  grapheme granularity gives one hanzi per token — correct for RSVP.
-  const granularity: "word" | "grapheme" = language === "japanese" ? "word" : "grapheme";
-
   const entries: WordEntry[] = [];
   const paragraphs = text.split(/\n{2,}/);
 
@@ -71,43 +67,32 @@ function tokenizeCJK(text: string, options: TokenizeOptions): WordEntry[] {
     const para = paragraphs[pi].trim();
     if (!para) continue;
 
-    // Collect word-like segments using Intl.Segmenter.
-    // isWordLike=true skips pure whitespace/punctuation segments so that
-    // punctuation is left attached to the preceding token (we handle it below).
     let segments: string[];
 
-    if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
-      const segmenter = new Intl.Segmenter(locale, { granularity });
+    if (language === "chinese") {
+      // jieba-wasm: proper NLP word segmentation — handles names, compounds, etc.
+      // cutChinese() is sync; caller must have awaited ensureJieba() first.
+      segments = cutChinese(para).filter((s) => s.trim().length > 0);
+    } else if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+      // Japanese: word granularity via Intl.Segmenter
+      const segmenter = new Intl.Segmenter("ja", { granularity: "word" });
       const allSegs = [...segmenter.segment(para)];
-
-      if (language === "japanese") {
-        // For Japanese keep only isWordLike segments (skips spaces/punctuation).
-        // Punctuation that directly follows a word should be merged so that
-        // getPunctuationMultiplier can detect it.
-        segments = [];
-        for (let i = 0; i < allSegs.length; i++) {
-          const seg = allSegs[i];
-          if (seg.isWordLike) {
-            let token = seg.segment;
-            // Peek ahead: if the very next segment is punctuation, attach it.
-            const next = allSegs[i + 1];
-            if (next && !next.isWordLike && next.segment.trim().length > 0) {
-              token += next.segment;
-              i++; // skip the punctuation segment
-            }
-            segments.push(token);
+      segments = [];
+      for (let i = 0; i < allSegs.length; i++) {
+        const seg = allSegs[i];
+        if (seg.isWordLike) {
+          let token = seg.segment;
+          // Peek ahead: attach trailing punctuation so getPunctuationMultiplier fires.
+          const next = allSegs[i + 1];
+          if (next && !next.isWordLike && next.segment.trim().length > 0) {
+            token += next.segment;
+            i++;
           }
+          segments.push(token);
         }
-      } else {
-        // Chinese: use every non-whitespace segment (word-like or punctuation).
-        // Punctuation gets its own entry which will receive a high multiplier,
-        // but we skip stand-alone whitespace.
-        segments = allSegs
-          .map((s) => s.segment)
-          .filter((s) => s.trim().length > 0);
       }
     } else {
-      // Fallback: one grapheme cluster per token (safe for CJK).
+      // Fallback: one grapheme cluster per token (safe for all CJK).
       segments = [...para].filter((ch) => ch.trim().length > 0);
     }
 

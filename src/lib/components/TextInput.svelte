@@ -4,9 +4,9 @@
 
   let dragOver = false
 
-  function load(text: string) {
+  async function load(text: string) {
     const t = text.trim()
-    if (t) reader.loadText(t)
+    if (t) await reader.loadText(t)
   }
 
   async function pasteFromClipboard() {
