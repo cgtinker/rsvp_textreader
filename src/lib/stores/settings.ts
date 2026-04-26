@@ -12,6 +12,8 @@ export type SettingsState = {
   punctuationPauses: boolean;
   wordLengthScaling: boolean;
   adaptiveAggressiveness: number;
+  focusPoint: number;    // 0–100: which character to align to the guide (0=first, 100=last)
+  fontSize: number;      // rem units for the display font
 };
 
 export const ACCENT_COLORS = [
@@ -31,6 +33,8 @@ const initial: SettingsState = {
   punctuationPauses: true,
   wordLengthScaling: true,
   adaptiveAggressiveness: 0.5,
+  focusPoint: 50,
+  fontSize: 3.5,
 };
 
 function createSettings() {
@@ -82,6 +86,14 @@ function createSettings() {
     update((s) => ({ ...s, adaptiveAggressiveness: Math.min(Math.max(value, 0), 1) }));
   }
 
+  function setFocusPoint(value: number) {
+    update((s) => ({ ...s, focusPoint: Math.min(Math.max(Math.round(value), 0), 100) }));
+  }
+
+  function setFontSize(value: number) {
+    update((s) => ({ ...s, fontSize: Math.min(Math.max(value, 1), 10) }));
+  }
+
   return {
     subscribe,
     set,
@@ -92,6 +104,8 @@ function createSettings() {
     togglePunctuationPauses,
     toggleWordLengthScaling,
     setAdaptiveAggressiveness,
+    setFocusPoint,
+    setFontSize,
   };
 }
 

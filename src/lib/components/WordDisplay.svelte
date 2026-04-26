@@ -1,31 +1,27 @@
 <script lang="ts">
   import { currentWord, reader } from "$lib/stores/reader";
+  import { settings } from "$lib/stores/settings";
   import { getPivotIndex } from "$lib/utils/orp";
   import { isCJK } from "$lib/utils/language";
   import { measureTypography } from "$lib/utils/typography";
   import { onMount } from "svelte";
 
   let charWidth = 0;
+  let pivotX = 50;
   let charRef: HTMLSpanElement;   // Latin reference: 'M'
   let cjkRef: HTMLSpanElement;    // CJK reference: '字'
   let stageEl: HTMLDivElement;
-  let wordRowEl: HTMLDivElement;
   let capRef: HTMLSpanElement;
 
   $: isCJKMode = isCJK($reader.language);
 
   onMount(() => {
     function measure() {
-      // Pick reference width based on the detected script.
-      // CJK glyphs are typically full-width (≈2× a Latin em), so we
-      // measure from a real CJK character when in CJK mode.
       charWidth = isCJKMode
         ? cjkRef.getBoundingClientRect().width
         : charRef.getBoundingClientRect().width;
 
       if (!stageEl || !capRef) return;
-      // Typography guides use Latin metrics — skip in CJK mode to avoid
-      // guide lines being positioned for Latin ink bounds.
       if (!isCJKMode) {
         const vars = measureTypography(stageEl, capRef);
         Object.entries(vars).forEach(([k, v]) => stageEl.style.setProperty(k, v));
@@ -36,21 +32,26 @@
     return () => window.removeEventListener("resize", measure);
   });
 
-  // Re-measure when language changes (reactive to reader.language).
+  // Re-measure when language or font size changes.
   $: if (isCJKMode !== undefined && charRef && cjkRef) {
     charWidth = isCJKMode
       ? cjkRef.getBoundingClientRect().width
       : charRef.getBoundingClientRect().width;
   }
 
-  $: pivot = getPivotIndex($currentWord);
-  $: before = $currentWord.slice(0, pivot);
-  $: char = $currentWord[pivot] ?? "";
-  $: after = $currentWord.slice(pivot + 1);
+  $: pivot = getPivotIndex($currentWord, $settings.focusPoint);
 
-  // shift the word left by the width of the `before` chars
-  // plus half a char so the pivot char's center sits at x=0
-  $: offset = charWidth > 0 ? -(before.length * charWidth) - charWidth / 2 : 0;
+  // Derive the guide line x-position from focusPoint, assuming a 20-char max word.
+  // The usable text area occupies 80% of the stage (10% margin each side).
+  // charsBeforePivot = floor(focusPoint/100 * 19), so the guide sits at the
+  // position that leaves exactly that many character-widths to its left.
+  $: {
+    const charsBeforePivot = Math.floor(($settings.focusPoint / 100) * 19);
+    pivotX = 10 + ((charsBeforePivot + 0.5) / 20) * 80;
+  }
+
+  // Shift the word row so the pivot character's center sits exactly on the guide line.
+  $: offset = charWidth > 0 ? -(pivot * charWidth) - charWidth / 2 : 0;
 
   function handleWheel(e: WheelEvent) {
     e.preventDefault();
@@ -70,6 +71,7 @@
   role="button"
   tabindex="0"
   aria-label={$reader.playing ? 'Pause' : 'Play'}
+  style="--pivot-x: {pivotX}%; --font-size: {$settings.fontSize}rem"
   on:click={() => reader.toggle()}
   on:keydown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); reader.toggle(); } }}
   on:wheel|preventDefault={handleWheel}
@@ -82,14 +84,11 @@
 
   <div
     class="word-row"
-    bind:this={wordRowEl}
     style="transform: translateX({offset}px)"
     aria-live="assertive"
     aria-atomic="true"
   >
-    <span class="seg before">{before}</span>
-    <span class="seg pivot">{char}</span>
-    <span class="seg after">{after}</span>
+    <span class="seg">{$currentWord}</span>
     <span bind:this={capRef} class="seg typo-ref" aria-hidden="true">H</span>
   </div>
 </div>
@@ -105,7 +104,6 @@
     padding-top: 5%;
     background: var(--bg);
     overflow: hidden;
-    --pivot-x: 37.3%;
     cursor: pointer;
   }
 
@@ -162,7 +160,7 @@
 
   .seg {
     font-family: "Courier New", Courier, monospace;
-    font-size: clamp(2.5rem, 7vw, 5rem);
+    font-size: var(--font-size, 3.5rem);
     line-height: 1;
     color: var(--word);
     white-space: pre;
@@ -183,9 +181,5 @@
     width: 0;
     overflow: visible;
     pointer-events: none;
-  }
-
-  .pivot {
-    color: var(--accent);
   }
 </style>

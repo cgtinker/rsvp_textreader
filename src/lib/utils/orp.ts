@@ -6,11 +6,9 @@ export type WordEntry = {
   multiplier: number;
 };
 
-export function getPivotIndex(word: string): number {
-  return Math.min(
-    Math.floor(word.length / 4) + 1,
-    word.length - 1 // never out of bounds
-  );
+export function getPivotIndex(word: string, focusPoint = 50): number {
+  if (word.length <= 1) return 0;
+  return Math.floor((focusPoint / 100) * (word.length - 1));
 }
 
 function isSentenceEnd(ch: string): boolean {

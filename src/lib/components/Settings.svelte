@@ -71,6 +71,46 @@
 
     <div class="divider"></div>
 
+    <!-- Focus point -->
+    <section class="row">
+      <label class="label" for="focus-point">Focus point</label>
+      <div class="wpm-row">
+        <input
+          id="focus-point"
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value={$settings.focusPoint}
+          on:input={(e) => settings.setFocusPoint(Number(e.currentTarget.value))}
+          class="slider"
+        />
+        <span class="wpm-val">{$settings.focusPoint}%</span>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Font size -->
+    <section class="row">
+      <label class="label" for="font-size">Font size</label>
+      <div class="wpm-row">
+        <input
+          id="font-size"
+          type="range"
+          min="1.5"
+          max="8"
+          step="0.25"
+          value={$settings.fontSize}
+          on:input={(e) => settings.setFontSize(Number(e.currentTarget.value))}
+          class="slider"
+        />
+        <span class="wpm-val">{$settings.fontSize}rem</span>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
     <!-- Dark mode -->
     <section class="row">
       <span class="label">Dark mode</span>
