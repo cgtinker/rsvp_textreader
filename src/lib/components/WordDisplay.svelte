@@ -50,7 +50,8 @@
   // Position of the vertical guide line as a % of stage width.
   // Mirror the same formula used in getPivotIndex so the guide always
   // sits under the focused character regardless of focusPoint setting.
-  $: pivotX = $settings.focusPoint;
+  // Map focusPoint 0–100 → 10–90% of stage width to avoid edge clipping.
+  $: pivotX = 10 + ($settings.focusPoint / 100) * 80;
 
   // shift the word left by the width of the `before` chars
   // plus half a char so the pivot char's center sits at x=0
