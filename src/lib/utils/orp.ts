@@ -61,9 +61,8 @@ function tokenizeCJK(text: string, options: TokenizeOptions): WordEntry[] {
 
   const locale = language === "japanese" ? "ja" : "zh";
   // Japanese: word granularity groups kanji+kana into real words.
-  // Chinese:  word granularity may also produce small meaningful groups;
-  //           fall back to grapheme if Intl.Segmenter is unavailable.
-  const granularity = language === "japanese" ? "word" : "word";
+  // Chinese:  grapheme granularity gives one hanzi per token — correct for RSVP.
+  const granularity: "word" | "grapheme" = language === "japanese" ? "word" : "grapheme";
 
   const entries: WordEntry[] = [];
   const paragraphs = text.split(/\n{2,}/);
