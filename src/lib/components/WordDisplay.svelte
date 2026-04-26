@@ -80,11 +80,8 @@
   on:keydown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); reader.toggle(); } }}
   on:wheel|preventDefault={handleWheel}
 >
-  <div class="guide guide-cap"></div>
-  <div class="guide guide-xh"></div>
-  <div class="guide guide-h"></div>
-  <div class="guide guide-v"></div>
-
+  <div class="guide-top"></div>
+  <div class="guide-bottom"></div>
   <div
     class="word-row"
     bind:this={wordRowEl}
@@ -112,42 +109,25 @@
     background: var(--bg);
     overflow: hidden;
     cursor: pointer;
+    font-size: clamp(2.5rem, 7vw, 5rem);
   }
 
-  .guide {
+  .guide-top,
+  .guide-bottom {
     position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--guide);
     pointer-events: none;
   }
-  .guide-cap {
-    top: var(--text-cap-top);
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: var(--guide);
+  /* cap-height line: roughly 0.55em above the text box center */
+  .guide-top {
+    top: calc(50% + 2.5% - 0.55em);
   }
-  .guide-xh {
-    top: var(--text-xheight);
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: var(--guide);
-  }
-  .guide-h {
-    top: var(--text-bottom);
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: var(--guide);
-  }
-
-  .guide-v {
-    left: var(--pivot-x);
-    top: 0;
-    bottom: 95%;
-    width: 1px;
-    background: var(--guide);
-    padding-top: 5%;
-    transform: translateX(-50%);
+  /* baseline/descender line: roughly 0.45em below the text box center */
+  .guide-bottom {
+    top: calc(50% + 2.5% + 0.45em);
   }
 
   .word-row {
