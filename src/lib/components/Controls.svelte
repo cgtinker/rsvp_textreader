@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { reader, currentIndex, wordCount } from '$lib/stores/reader'
+  import { reader, progress, currentIndex, wordCount } from '$lib/stores/reader'
   import { settings } from '$lib/stores/settings'
   import { onMount } from 'svelte'
 
@@ -27,15 +27,29 @@
     reader.scrubTo(ratio)
   }
 
-  $: progressPct = $wordCount === 0 ? 0 : ($currentIndex / ($wordCount - 1)) * 100
+  function handleScrubKey(e: KeyboardEvent) {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); reader.jumpBack(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); reader.jumpForward(); }
+  }
+
+  $: progressPct = $progress * 100
 </script>
 
 <div class="controls" bind:this={controlsEl}>
 
   <!-- progress / scrub bar -->
-  <div class="progress-track" on:click={handleScrub} role="progressbar"
-    aria-valuenow={$currentIndex} aria-valuemin={0} aria-valuemax={$wordCount}>
-    <div class="progress-fill" style="width: {progressPct}%"/>
+  <div
+    class="progress-track"
+    role="slider"
+    tabindex="0"
+    aria-label="Reading position"
+    aria-valuenow={$currentIndex}
+    aria-valuemin={0}
+    aria-valuemax={$wordCount - 1}
+    on:click={handleScrub}
+    on:keydown={handleScrubKey}
+  >
+    <div class="progress-fill" style="width: {progressPct}%"></div>
   </div>
 
   <div class="bar">

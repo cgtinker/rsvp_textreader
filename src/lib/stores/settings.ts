@@ -14,7 +14,7 @@ export type SettingsState = {
   adaptiveAggressiveness: number;
 };
 
-const ACCENT_COLORS = [
+export const ACCENT_COLORS = [
   "#2980b9",
   "#8e44ad",
   "#e91e8c",
@@ -39,17 +39,10 @@ function createSettings() {
   // Guard: only persist after initial async hydration completes.
   let _loaded = false;
 
-  // Apply theme + accent to <html> and persist whenever store changes.
+  // Persist whenever store changes (after initial hydration).
+  // DOM side-effects (data-theme, --accent) are handled in +layout.svelte.
   subscribe((s) => {
-    if (typeof document === "undefined") return;
-    document.documentElement.setAttribute(
-      "data-theme",
-      s.darkMode ? "dark" : "light"
-    );
-    document.documentElement.style.setProperty("--accent", s.accentColor);
-    if (_loaded) {
-      platform.saveSettings(s);
-    }
+    if (_loaded) platform.saveSettings(s);
   });
 
   // Hydrate from persistent storage, then enable saving.
@@ -99,7 +92,6 @@ function createSettings() {
     togglePunctuationPauses,
     toggleWordLengthScaling,
     setAdaptiveAggressiveness,
-    ACCENT_COLORS,
   };
 }
 

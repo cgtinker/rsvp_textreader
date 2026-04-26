@@ -2,16 +2,14 @@
   import WordDisplay from "$lib/components/WordDisplay.svelte";
   import Controls from "$lib/components/Controls.svelte";
   import Settings from "$lib/components/Settings.svelte";
-  import { reader } from "$lib/stores/reader";
+  import TextInput from "$lib/components/TextInput.svelte";
+  import { reader, wordCount } from "$lib/stores/reader";
   import { settings, settingsLoaded } from "$lib/stores/settings";
   import { platform } from "$lib/platform";
-  import { get } from "svelte/store";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import "../app.css";
 
   let settingsOpen = false;
-
-  const PLACEHOLDER = "Paste text or drop a .txt file to start reading.";
 
   async function loadFile(file: File) {
     if (!file.name.endsWith('.txt') && !file.type.startsWith('text/')) return;
@@ -19,24 +17,39 @@
     if (text) { reader.stop(); reader.loadText(text); }
   }
 
+  let _cleanupListeners: (() => void) | null = null;
+
   onMount(async () => {
     await settingsLoaded;
-    reader.setWpm(get(settings).defaultWpm);
+    reader.setWpm($settings.defaultWpm);
     const text = await platform.getSelectedText();
-    reader.loadText(text.trim() || PLACEHOLDER);
+    if (text.trim()) reader.loadText(text.trim());
 
-    document.addEventListener('paste', (e: ClipboardEvent) => {
+    function handlePaste(e: ClipboardEvent) {
       const text = e.clipboardData?.getData('text/plain').trim() ?? '';
       if (text) { reader.stop(); reader.loadText(text); }
-    });
+    }
 
-    document.addEventListener('dragover', (e: DragEvent) => e.preventDefault());
-    document.addEventListener('drop', async (e: DragEvent) => {
+    function handleDragOver(e: DragEvent) { e.preventDefault(); }
+
+    async function handleDrop(e: DragEvent) {
       e.preventDefault();
       const file = e.dataTransfer?.files[0];
       if (file) await loadFile(file);
-    });
+    }
+
+    document.addEventListener('paste', handlePaste);
+    document.addEventListener('dragover', handleDragOver);
+    document.addEventListener('drop', handleDrop);
+
+    _cleanupListeners = () => {
+      document.removeEventListener('paste', handlePaste);
+      document.removeEventListener('dragover', handleDragOver);
+      document.removeEventListener('drop', handleDrop);
+    };
   });
+
+  onDestroy(() => _cleanupListeners?.());
 </script>
 
 {#if settingsOpen}
@@ -53,8 +66,12 @@
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>
   </button>
-  <WordDisplay />
-  <Controls />
+  {#if $wordCount === 0}
+    <TextInput />
+  {:else}
+    <WordDisplay />
+    <Controls />
+  {/if}
 {/if}
 
 <style>

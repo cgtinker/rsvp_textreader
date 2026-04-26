@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { settings } from '$lib/stores/settings'
+  import { settings, ACCENT_COLORS } from '$lib/stores/settings'
 
   export let onClose: () => void
 
@@ -77,7 +77,7 @@
     <section class="row">
       <span class="label">Accent color</span>
       <div class="swatches">
-        {#each settings.ACCENT_COLORS as color}
+        {#each ACCENT_COLORS as color}
           <button
             class="swatch"
             class:active={$settings.accentColor === color}

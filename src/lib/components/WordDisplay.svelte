@@ -83,15 +83,22 @@
 <!-- hidden single char used purely for measurement -->
 <span bind:this={charRef} class="seg measure" aria-hidden="true">M</span>
 
-<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
-<div class="stage" bind:this={stageEl} on:click={() => reader.toggle()} on:wheel|preventDefault={handleWheel}>
+<div
+  class="stage"
+  bind:this={stageEl}
+  role="button"
+  tabindex="0"
+  aria-label={$reader.playing ? 'Pause' : 'Play'}
+  on:click={() => reader.toggle()}
+  on:keydown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); reader.toggle(); } }}
+  on:wheel|preventDefault={handleWheel}
+>
   <div class="guide guide-cap"></div>
   <div class="guide guide-xh"></div>
   <div class="guide guide-h"></div>
   <div class="guide guide-desc"></div>
   <div class="guide guide-v"></div>
 
-  <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
   <div
     class="word-row"
     bind:this={wordRowEl}
