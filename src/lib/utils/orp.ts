@@ -8,7 +8,7 @@ export type WordEntry = {
 
 export function getPivotIndex(word: string, focusPoint = 50): number {
   if (word.length <= 1) return 0;
-  return Math.floor((focusPoint / 100) * (word.length - 1));
+  return Math.round((focusPoint / 100) * (word.length - 1));
 }
 
 function isSentenceEnd(ch: string): boolean {
