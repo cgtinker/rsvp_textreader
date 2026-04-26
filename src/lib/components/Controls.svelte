@@ -132,10 +132,10 @@
     padding: 0 1.25rem;
   }
 
-  /* back · play · forward — centered on the vertical guide column */
+  /* back · play · forward — centered in the controls bar */
   .play-group {
     position: absolute;
-    left: var(--pivot-x);
+    left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
