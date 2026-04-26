@@ -7,21 +7,26 @@
   import { onMount } from "svelte";
 
   let charWidth = 0;
-  let pivotX = 50;
   let charRef: HTMLSpanElement;   // Latin reference: 'M'
   let cjkRef: HTMLSpanElement;    // CJK reference: '字'
   let stageEl: HTMLDivElement;
+  let wordRowEl: HTMLDivElement;
   let capRef: HTMLSpanElement;
 
   $: isCJKMode = isCJK($reader.language);
 
   onMount(() => {
     function measure() {
+      // Pick reference width based on the detected script.
+      // CJK glyphs are typically full-width (≈2× a Latin em), so we
+      // measure from a real CJK character when in CJK mode.
       charWidth = isCJKMode
         ? cjkRef.getBoundingClientRect().width
         : charRef.getBoundingClientRect().width;
 
       if (!stageEl || !capRef) return;
+      // Typography guides use Latin metrics — skip in CJK mode to avoid
+      // guide lines being positioned for Latin ink bounds.
       if (!isCJKMode) {
         const vars = measureTypography(stageEl, capRef);
         Object.entries(vars).forEach(([k, v]) => stageEl.style.setProperty(k, v));
@@ -32,7 +37,7 @@
     return () => window.removeEventListener("resize", measure);
   });
 
-  // Re-measure when language or font size changes.
+  // Re-measure when language changes (reactive to reader.language).
   $: if (isCJKMode !== undefined && charRef && cjkRef) {
     charWidth = isCJKMode
       ? cjkRef.getBoundingClientRect().width
@@ -40,21 +45,16 @@
   }
 
   $: pivot = getPivotIndex($currentWord, $settings.focusPoint);
+  $: pivotChar = $currentWord[pivot] ?? "";
 
-  // Derive the guide line x-position from focusPoint, assuming a 20-char max word.
-  // The usable text area occupies 80% of the stage (10% margin each side).
-  // charsBeforePivot = floor(focusPoint/100 * 19), so the guide sits at the
-  // position that leaves exactly that many character-widths to its left.
-  $: {
-    const charsBeforePivot = Math.floor(($settings.focusPoint / 100) * 19);
-    pivotX = 10 + ((charsBeforePivot + 0.5) / 20) * 80;
-  }
+  // Position of the vertical guide line as a % of stage width.
+  // Mirror the same formula used in getPivotIndex so the guide always
+  // sits under the focused character regardless of focusPoint setting.
+  $: pivotX = $settings.focusPoint;
 
-  // Shift the word row so the pivot character's center sits exactly on the guide line.
+  // shift the word left by the width of the `before` chars
+  // plus half a char so the pivot char's center sits at x=0
   $: offset = charWidth > 0 ? -(pivot * charWidth) - charWidth / 2 : 0;
-  $: before = $currentWord.slice(0, pivot);
-  $: pivotChar = $currentWord.slice(pivot, pivot + 1);
-  $: after = $currentWord.slice(pivot + 1);
 
   function handleWheel(e: WheelEvent) {
     e.preventDefault();
@@ -74,7 +74,7 @@
   role="button"
   tabindex="0"
   aria-label={$reader.playing ? 'Pause' : 'Play'}
-  style="--pivot-x: {pivotX}%; --font-size: {$settings.fontSize}rem"
+  style="--pivot-x: {pivotX}%"
   on:click={() => reader.toggle()}
   on:keydown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); reader.toggle(); } }}
   on:wheel|preventDefault={handleWheel}
@@ -82,16 +82,19 @@
   <div class="guide guide-cap"></div>
   <div class="guide guide-xh"></div>
   <div class="guide guide-h"></div>
-  <div class="guide guide-desc"></div>
   <div class="guide guide-v"></div>
 
   <div
     class="word-row"
+    bind:this={wordRowEl}
     style="transform: translateX({offset}px)"
     aria-live="assertive"
     aria-atomic="true"
   >
-    <span class="seg">{before}<span class="seg pivot-char">{pivotChar}</span>{after}</span>
+    <span class="seg word-text">{$currentWord}</span>
+    {#if charWidth > 0}
+      <span class="seg pivot-char" style="left: {pivot * charWidth}px" aria-hidden="true">{pivotChar}</span>
+    {/if}
     <span bind:this={capRef} class="seg typo-ref" aria-hidden="true">H</span>
   </div>
 </div>
@@ -135,19 +138,12 @@
     height: 1px;
     background: var(--guide);
   }
-  .guide-desc {
-    top: var(--text-descender);
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: var(--guide);
-  }
 
   .guide-v {
     left: var(--pivot-x);
     top: 0;
-    bottom: 0;
-    width: 30px;
+    bottom: 95%;
+    width: 1px;
     background: var(--guide);
     padding-top: 5%;
     transform: translateX(-50%);
@@ -163,14 +159,10 @@
 
   .seg {
     font-family: "Courier New", Courier, monospace;
-    font-size: var(--font-size, 3.5rem);
+    font-size: clamp(2.5rem, 7vw, 5rem);
     line-height: 1;
     color: var(--word);
     white-space: pre;
-  }
-
-  .pivot-char {
-    color: var(--accent);
   }
 
   /* hidden measurement element */
@@ -187,6 +179,17 @@
     visibility: hidden;
     width: 0;
     overflow: visible;
+    pointer-events: none;
+  }
+
+  .word-text {
+    position: relative;
+  }
+
+  .pivot-char {
+    position: absolute;
+    top: 0;
+    color: var(--accent);
     pointer-events: none;
   }
 </style>
