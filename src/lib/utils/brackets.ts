@@ -73,6 +73,15 @@ export function getExpectedCloser(openChar: string): string {
   return openChar;
 }
 
+// Punctuation that can appear after a closing bracket in real text and should
+// be skipped (but not collected) during the trailing scan.
+const TRAILING_PUNCT = new Set([
+  ',', '.', '!', '?', ':', ';', '\u2026', // ellipsis
+  '\u2013', '\u2014',                      // en-dash, em-dash
+  '\u3002', '\uff01', '\uff1f',            // CJK full-stop, !, ?
+  '\u3001', '\uff0c',                      // CJK comma variants
+]);
+
 // ---------------------------------------------------------------------------
 // Core helpers
 // ---------------------------------------------------------------------------
@@ -80,6 +89,8 @@ export function getExpectedCloser(openChar: string): string {
 /**
  * Scan `word` and return bracket events at its edges.
  * Mid-word characters are ignored entirely.
+ * Trailing punctuation (commas, periods, etc.) is skipped before collecting
+ * closing bracket/quote chars.
  */
 export function extractWordBrackets(word: string): {
   leading: string[];
@@ -89,11 +100,15 @@ export function extractWordBrackets(word: string): {
   const trailing: string[] = [];
 
   let i = 0;
+  while (i < word.length && TRAILING_PUNCT.has(word[i])) i++; // skip leading punct
   while (i < word.length && EDGE_CHARS.has(word[i])) {
     leading.push(word[i++]);
   }
 
+  // Scan from the right, skipping trailing punctuation first, then collecting
+  // any bracket/quote chars that appear before the word body.
   let j = word.length - 1;
+  while (j >= i && TRAILING_PUNCT.has(word[j])) j--; // skip punct
   while (j >= i && EDGE_CHARS.has(word[j])) {
     trailing.push(word[j--]);
   }
