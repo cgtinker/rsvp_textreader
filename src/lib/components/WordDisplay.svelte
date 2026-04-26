@@ -1,62 +1,21 @@
 <script lang="ts">
   import { currentWord, reader } from "$lib/stores/reader";
   import { getPivotIndex } from "$lib/utils/orp";
+  import { measureTypography } from "$lib/utils/typography";
   import { onMount } from "svelte";
 
   let charWidth = 0;
   let charRef: HTMLSpanElement;
   let stageEl: HTMLDivElement;
   let wordRowEl: HTMLDivElement;
-  let baselineRef: HTMLSpanElement;
   let capRef: HTMLSpanElement;
-  let descenderRef: HTMLSpanElement;
 
-  // measure a single character once the font is loaded
   onMount(() => {
     function measure() {
       charWidth = charRef.getBoundingClientRect().width;
       if (!stageEl || !capRef) return;
-
-      const sr = stageEl.getBoundingClientRect();
-      const lineBox = capRef.getBoundingClientRect();
-
-      // Use canvas metrics to get per-glyph ink bounds
-      const style = getComputedStyle(capRef);
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d")!;
-      ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-
-      const mH = ctx.measureText("H");
-      const mx = ctx.measureText("x");
-      const mp = ctx.measureText("p");
-
-      // fontBoundingBoxAscent + Descent = canvas em square height, which may
-      // not exactly equal the CSS line-box height. Normalize so baseline is
-      // proportionally correct relative to the actual rendered line box.
-      const emH = mH.fontBoundingBoxAscent + mH.fontBoundingBoxDescent;
-      const baselineY =
-        lineBox.top -
-        sr.top +
-        (mH.fontBoundingBoxAscent / emH) * lineBox.height;
-      const h = sr.height;
-      const pct = (y: number) => `${((y / h) * 100).toFixed(2)}%`;
-
-      stageEl.style.setProperty(
-        "--text-cap-top",
-        pct(baselineY - mH.actualBoundingBoxAscent),
-      );
-      stageEl.style.setProperty(
-        "--text-xheight",
-        pct(baselineY - mx.actualBoundingBoxAscent),
-      );
-      stageEl.style.setProperty(
-        "--text-bottom",
-        pct(baselineY + mx.actualBoundingBoxDescent),
-      );
-      stageEl.style.setProperty(
-        "--text-descender",
-        pct(baselineY + mp.actualBoundingBoxDescent),
-      );
+      const vars = measureTypography(stageEl, capRef);
+      Object.entries(vars).forEach(([k, v]) => stageEl.style.setProperty(k, v));
     }
     document.fonts.ready.then(measure);
     window.addEventListener("resize", measure);
@@ -109,14 +68,7 @@
     <span class="seg before">{before}</span>
     <span class="seg pivot">{char}</span>
     <span class="seg after">{after}</span>
-    <!-- typographic reference glyphs share this baseline exactly -->
     <span bind:this={capRef} class="seg typo-ref" aria-hidden="true">H</span>
-    <span bind:this={baselineRef} class="seg typo-ref" aria-hidden="true"
-      >x</span
-    >
-    <span bind:this={descenderRef} class="seg typo-ref" aria-hidden="true"
-      >p</span
-    >
   </div>
 </div>
 
@@ -177,20 +129,7 @@
     padding-top: 5%;
     transform: translateX(-50%);
   }
-  /*
-  .pip {
-    position: absolute;
-    left: var(--pivot-x);
-    transform: translateX(-50%);
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--accent);
-    pointer-events: none;
-  }
-  .pip-top { top: calc(50% - 2.6em); }
-  .pip-bot { bottom: calc(50% - 2.6em); }
-*/
+
   .word-row {
     position: absolute;
     display: flex;

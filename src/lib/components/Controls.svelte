@@ -1,6 +1,5 @@
 <script lang="ts">
   import { reader, progress, currentIndex, wordCount } from '$lib/stores/reader'
-  import { settings } from '$lib/stores/settings'
   import { onMount } from 'svelte'
 
   let controlsEl: HTMLDivElement
@@ -185,13 +184,6 @@
   }
   .btn-play:hover {
     border-color: var(--accent);
-  }
-
-  /* wpm slider */
-  .wpm-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
   }
 
   .slider {

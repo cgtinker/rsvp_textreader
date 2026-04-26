@@ -1,5 +1,6 @@
 <script lang="ts">
   import { settings, ACCENT_COLORS } from '$lib/stores/settings'
+  import Toggle from '$lib/components/ui/Toggle.svelte'
 
   export let onClose: () => void
 
@@ -59,16 +60,7 @@
     <!-- Dark mode -->
     <section class="row">
       <span class="label">Dark mode</span>
-      <button
-        class="toggle"
-        class:on={$settings.darkMode}
-        on:click={() => settings.toggleDarkMode()}
-        role="switch"
-        aria-checked={$settings.darkMode}
-        aria-label="Toggle dark mode"
-      >
-        <span class="thumb"></span>
-      </button>
+      <Toggle checked={$settings.darkMode} label="Toggle dark mode" on:change={() => settings.toggleDarkMode()} />
     </section>
 
     <div class="divider"></div>
@@ -99,16 +91,7 @@
         </svg>
         Adaptive mode
       </button>
-      <button
-        class="toggle"
-        class:on={$settings.adaptiveMode}
-        on:click={toggleAdaptive}
-        role="switch"
-        aria-checked={$settings.adaptiveMode}
-        aria-label="Toggle adaptive mode"
-      >
-        <span class="thumb"></span>
-      </button>
+      <Toggle checked={$settings.adaptiveMode} label="Toggle adaptive mode" on:change={toggleAdaptive} />
     </section>
 
     {#if $settings.adaptiveMode && adaptiveExpanded}
@@ -117,16 +100,7 @@
       <!-- Punctuation pauses -->
       <section class="row">
         <span class="label">Punctuation pauses</span>
-        <button
-          class="toggle"
-          class:on={$settings.punctuationPauses}
-          on:click={() => settings.togglePunctuationPauses()}
-          role="switch"
-          aria-checked={$settings.punctuationPauses}
-          aria-label="Toggle punctuation pauses"
-        >
-          <span class="thumb"></span>
-        </button>
+        <Toggle checked={$settings.punctuationPauses} label="Toggle punctuation pauses" on:change={() => settings.togglePunctuationPauses()} />
       </section>
 
       <div class="divider"></div>
@@ -139,16 +113,7 @@
           </svg>
           Word length scaling
         </button>
-        <button
-          class="toggle"
-          class:on={$settings.wordLengthScaling}
-          on:click={toggleScaling}
-          role="switch"
-          aria-checked={$settings.wordLengthScaling}
-          aria-label="Toggle word length scaling"
-        >
-          <span class="thumb"></span>
-        </button>
+        <Toggle checked={$settings.wordLengthScaling} label="Toggle word length scaling" on:change={toggleScaling} />
       </section>
 
       {#if $settings.wordLengthScaling && scalingExpanded}
@@ -302,39 +267,6 @@
     color: var(--word);
     min-width: 4ch;
     text-align: right;
-  }
-
-  /* Toggle switch */
-  .toggle {
-    position: relative;
-    width: 40px;
-    height: 22px;
-    border-radius: 11px;
-    border: 1px solid var(--guide);
-    background: transparent;
-    cursor: pointer;
-    transition: border-color 200ms, background 200ms;
-    padding: 0;
-    flex-shrink: 0;
-  }
-  .toggle.on {
-    background: var(--accent);
-    border-color: var(--accent);
-  }
-  .thumb {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--muted);
-    transition: transform 200ms, background 200ms;
-    display: block;
-  }
-  .toggle.on .thumb {
-    transform: translateX(18px);
-    background: #fff;
   }
 
   /* Swatches */
