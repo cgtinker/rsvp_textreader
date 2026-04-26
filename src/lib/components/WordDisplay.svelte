@@ -52,6 +52,9 @@
 
   // Shift the word row so the pivot character's center sits exactly on the guide line.
   $: offset = charWidth > 0 ? -(pivot * charWidth) - charWidth / 2 : 0;
+  $: before = $currentWord.slice(0, pivot);
+  $: pivotChar = $currentWord.slice(pivot, pivot + 1);
+  $: after = $currentWord.slice(pivot + 1);
 
   function handleWheel(e: WheelEvent) {
     e.preventDefault();
@@ -88,7 +91,7 @@
     aria-live="assertive"
     aria-atomic="true"
   >
-    <span class="seg">{$currentWord}</span>
+    <span class="seg">{before}<span class="seg pivot-char">{pivotChar}</span>{after}</span>
     <span bind:this={capRef} class="seg typo-ref" aria-hidden="true">H</span>
   </div>
 </div>
@@ -164,6 +167,10 @@
     line-height: 1;
     color: var(--word);
     white-space: pre;
+  }
+
+  .pivot-char {
+    color: var(--accent);
   }
 
   /* hidden measurement element */
