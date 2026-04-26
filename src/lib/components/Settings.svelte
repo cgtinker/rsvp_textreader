@@ -98,14 +98,14 @@
         <input
           id="font-size"
           type="range"
-          min="1.5"
-          max="8"
-          step="0.25"
+          min="1"
+          max="6"
+          step=".25"
           value={$settings.fontSize}
           on:input={(e) => settings.setFontSize(Number(e.currentTarget.value))}
           class="slider"
         />
-        <span class="wpm-val">{$settings.fontSize}rem</span>
+        <span class="wpm-val">{$settings.fontSize}</span>
       </div>
     </section>
 
