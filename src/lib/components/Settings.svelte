@@ -1,6 +1,7 @@
 <script lang="ts">
   import { settings, ACCENT_COLORS } from '$lib/stores/settings'
   import Toggle from '$lib/components/ui/Toggle.svelte'
+  import IconClose from '$lib/components/ui/icons/IconClose.svelte'
 
   export let onClose: () => void
 
@@ -28,10 +29,7 @@
 <div class="overlay" role="dialog" aria-modal="true" aria-label="Settings">
   <!-- close button top-left -->
   <button class="corner-btn" on:click={onClose} title="Close settings" aria-label="Close settings">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <line x1="18" y1="6" x2="6" y2="18"/>
-      <line x1="6" y1="6" x2="18" y2="18"/>
-    </svg>
+    <IconClose />
   </button>
 
   <div class="panel">

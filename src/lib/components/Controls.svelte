@@ -1,6 +1,10 @@
 <script lang="ts">
   import { reader, progress, currentIndex, wordCount } from '$lib/stores/reader'
   import { onMount } from 'svelte'
+  import IconJumpBack from '$lib/components/ui/icons/IconJumpBack.svelte'
+  import IconJumpForward from '$lib/components/ui/icons/IconJumpForward.svelte'
+  import IconPlay from '$lib/components/ui/icons/IconPlay.svelte'
+  import IconPause from '$lib/components/ui/icons/IconPause.svelte'
 
   let controlsEl: HTMLDivElement
 
@@ -55,33 +59,20 @@
 
     <!-- play group: absolutely centered on the vertical guide -->
     <div class="play-group">
-      <button class="btn" on:click={() => reader.jumpBack()} title="5 seconds back">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <polyline points="1 4 1 10 7 10"/>
-          <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
-          <text x="12" y="14" text-anchor="middle" font-size="7" stroke="none" fill="currentColor" font-family="monospace">5</text>
-        </svg>
+      <button class="btn" on:click={() => reader.jumpBack()} title="5 seconds back" aria-label="Jump back 5 seconds">
+        <IconJumpBack />
       </button>
 
-      <button class="btn btn-play" on:click={() => reader.toggle()}>
+      <button class="btn btn-play" on:click={() => reader.toggle()} aria-label={$reader.playing ? 'Pause' : 'Play'}>
         {#if $reader.playing}
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <rect x="5" y="4" width="4" height="16" rx="1"/>
-            <rect x="15" y="4" width="4" height="16" rx="1"/>
-          </svg>
+          <IconPause />
         {:else}
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <polygon points="5,3 19,12 5,21"/>
-          </svg>
+          <IconPlay />
         {/if}
       </button>
 
-      <button class="btn" on:click={() => reader.jumpForward()} title="5 seconds forward">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <polyline points="23 4 23 10 17 10"/>
-          <path d="M20.49 15a9 9 0 1 1-.49-4.5"/>
-          <text x="12" y="14" text-anchor="middle" font-size="7" stroke="none" fill="currentColor" font-family="monospace">5</text>
-        </svg>
+      <button class="btn" on:click={() => reader.jumpForward()} title="5 seconds forward" aria-label="Jump forward 5 seconds">
+        <IconJumpForward />
       </button>
     </div>
 
